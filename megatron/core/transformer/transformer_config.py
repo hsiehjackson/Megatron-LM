@@ -2,7 +2,7 @@
 
 import types
 from dataclasses import dataclass
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Literal
 
 import torch
 import torch.nn.functional as F
@@ -262,8 +262,22 @@ class TransformerConfig(ModelParallelConfig):
     max_position_embeddings: int = 0
     """Deprecated. Do not use."""
 
-    rotary_percent: float = 0
-    """Deprecated. Do not use."""
+    # rotary_percent: float = 0
+    # """Deprecated. Do not use."""
+
+    ####################
+    # miscellaneous model shared
+    ####################
+    position_embedding_type: Literal['learned_absolute', 'rope'] = 'learned_absolute'
+    rotary_percent: float = 1.0
+    rotary_base=10000
+    
+    seq_len_interpolation_factor: Optional[float] = None
+
+    """BERT specific args"""
+    num_tokentypes: int = 2
+    add_binary_head: bool = True
+    return_embeddings: bool = False
 
     def __post_init__(self):
         """ Python dataclass method that is used to modify attributes after initialization.
