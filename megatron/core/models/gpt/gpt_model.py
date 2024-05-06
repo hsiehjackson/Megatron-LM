@@ -16,6 +16,7 @@ from megatron.core.transformer.enums import AttnMaskType, ModelType
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.transformer_block import TransformerBlock
 from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.general_config import ModelGeneralConfig
 from megatron.core.utils import make_tp_sharded_tensor_for_checkpoint
 
 
@@ -40,67 +41,56 @@ class GPTModel(LanguageModule):
 
     def __init__(
         self,
+        general_config: ModelGeneralConfig,
         config: TransformerConfig,
-        transformer_layer_spec: ModuleSpec,
-        vocab_size: int,
-        max_sequence_length: int,
-        pre_process: bool = True,
-        post_process: bool = True,
-        fp16_lm_cross_entropy: bool = False,
-        parallel_output: bool = True,
-        share_embeddings_and_output_weights: bool = False,
-        position_embedding_type: Literal['learned_absolute', 'rope'] = 'learned_absolute',
-        rotary_percent: float = 1.0,
-        rotary_base: int = 10000,
-        seq_len_interpolation_factor: Optional[float] = None,
     ) -> None:
         super().__init__(config=config)
 
-        self.transformer_layer_spec: ModuleSpec = transformer_layer_spec
-        self.vocab_size = vocab_size
-        self.max_sequence_length = max_sequence_length
-        self.pre_process = pre_process
-        self.post_process = post_process
-        self.fp16_lm_cross_entropy = fp16_lm_cross_entropy
-        self.parallel_output = parallel_output
-        self.share_embeddings_and_output_weights = share_embeddings_and_output_weights
-        self.position_embedding_type = position_embedding_type
+        self.transformer_layer_spec: ModuleSpec = general_config.model_decoder_layer_spec #transformer_layer_spec
+        self.vocab_size = general_config.vocab_size
+        self.max_sequence_length = general_config.max_sequence_length
+        self.pre_process = general_config.pre_process
+        self.post_process = general_config.post_process
+        # self.fp16_lm_cross_entropy = fp16_lm_cross_entropy
+        self.parallel_output = general_config.parallel_output
+        self.share_embeddings_and_output_weights = general_config.share_embeddings_and_output_weights
+        self.position_embedding_type = config.position_embedding_type
 
         # megatron core pipelining currently depends on model type
         # TODO: remove this dependency ?
         self.model_type = ModelType.encoder_or_decoder
 
         # These 2 attributes are needed for TensorRT-LLM export.
-        self.max_position_embeddings = max_sequence_length
-        self.rotary_percent = rotary_percent
+        self.max_position_embeddings = general_config.max_sequence_length
+        self.rotary_percent = config.rotary_percent
 
         if self.pre_process:
             self.embedding = LanguageModelEmbedding(
                 config=self.config,
                 vocab_size=self.vocab_size,
                 max_sequence_length=self.max_sequence_length,
-                position_embedding_type=position_embedding_type,
+                position_embedding_type=config.position_embedding_type,
             )
 
         if self.position_embedding_type == 'rope':
             self.rotary_pos_emb = RotaryEmbedding(
                 kv_channels=self.config.kv_channels,
-                rotary_percent=rotary_percent,
+                rotary_percent=config.rotary_percent,
                 rotary_interleaved=self.config.rotary_interleaved,
-                seq_len_interpolation_factor=seq_len_interpolation_factor,
-                rotary_base=rotary_base,
+                seq_len_interpolation_factor=config.seq_len_interpolation_factor,
+                rotary_base=config.rotary_base,
             )
 
         # Transformer.
         self.decoder = TransformerBlock(
             config=self.config,
-            spec=transformer_layer_spec,
+            spec=self.transformer_layer_spec,
             pre_process=self.pre_process,
             post_process=self.post_process,
         )
 
         # Output
-        if post_process:
+        if self.post_process:
             if self.config.defer_embedding_wgrad_compute:
                 # The embedding activation buffer preserves a reference to the input activations
                 # of the final embedding projection layer GEMM. It will hold the activations for
