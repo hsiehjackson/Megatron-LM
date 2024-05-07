@@ -4,7 +4,7 @@ import pytest
 
 import torch
 
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_t5 import T5Config
 from megatron.core.models.T5.t5_model import T5Model
 from tests.unit_tests.test_utilities import Utils
 from megatron.core.tensor_parallel.random import model_parallel_cuda_manual_seed
@@ -18,10 +18,21 @@ class TestT5Model:
     def setup_method(self, method):
         Utils.initialize_model_parallel(1,1)
         model_parallel_cuda_manual_seed(123)
-        transformer_config = TransformerConfig(num_layers=12, hidden_size=768, num_attention_heads=12, kv_channels=64, ffn_hidden_size=3072, use_cpu_initialization=True)
         en_block_spec = get_t5_encoder_with_transformer_engine_block_spec(12)
         de_block_spec = get_t5_decoder_with_transformer_engine_block_spec(12)
-        self.t5_model = T5Model(config=transformer_config, transformer_encoder_layer_spec=en_block_spec, transformer_decoder_layer_spec=de_block_spec,  vocab_size=29184, max_sequence_length=4)
+
+        config = T5Config(num_layers=12, 
+                            hidden_size=768, 
+                            num_attention_heads=12, 
+                            kv_channels=64, 
+                            ffn_hidden_size=3072, 
+                            use_cpu_initialization=True,
+                            model_encoder_layer_spec=en_block_spec,
+                            model_decoder_layer_spec=de_block_spec,
+                            vocab_size=29184,
+                            max_sequence_length=4)
+        
+        self.t5_model = T5Model(config=config)
 
     def teardown_method(self, method):
         Utils.destroy_model_parallel()
@@ -32,7 +43,7 @@ class TestT5Model:
         assert self.t5_model.max_sequence_length == 4
 
     def test_set_input_tensor(self):
-        config: TransformerConfig = self.t5_model.config
+        config: T5Config = self.t5_model.config
         sequence_length = self.t5_model.max_sequence_length
         micro_batch_size = 2
 
@@ -46,7 +57,7 @@ class TestT5Model:
         assert self.t5_model.encoder.input_tensor.shape[2] == config.hidden_size
 
     def test_post_process_forward(self):
-        config: TransformerConfig = self.t5_model.config
+        config: T5Config = self.t5_model.config
         sequence_length = self.t5_model.max_sequence_length
         micro_batch_size = 2
 

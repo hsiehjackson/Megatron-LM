@@ -7,7 +7,7 @@ from torch import Tensor
 
 from megatron.core import tensor_parallel
 from megatron.core.transformer.module import MegatronModule
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.transformer_config import TransformerConfig
 
 
 class LanguageModelEmbedding(MegatronModule):

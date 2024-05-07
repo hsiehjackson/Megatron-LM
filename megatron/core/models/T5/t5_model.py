@@ -15,7 +15,7 @@ from megatron.core.transformer.enums import AttnMaskType, ModelType
 from megatron.core.transformer.module import MegatronModule
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.transformer_block import TransformerBlock
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_t5 import T5Config
 from megatron.core.utils import make_tp_sharded_tensor_for_checkpoint
 
 
@@ -33,11 +33,11 @@ class T5LMHead(MegatronModule):
 
     def __init__(
         self,
-        config: TransformerConfig,
-        parallel_output: bool,
-        vocab_size: int,
-        pre_process: bool = True,
-        share_embeddings_and_output_weights: bool = False,
+        config: T5Config,
+        parallel_output,
+        vocab_size,
+        pre_process,
+        share_embeddings_and_output_weights,
     ):
         super(T5LMHead, self).__init__(config=config)
 
@@ -105,36 +105,24 @@ class T5Model(LanguageModule):
 
     def __init__(
         self,
-        config: TransformerConfig,
-        transformer_encoder_layer_spec: ModuleSpec,
-        transformer_decoder_layer_spec: ModuleSpec,
-        vocab_size: int,
-        max_sequence_length: int,
-        pre_process: bool = True,
-        post_process: bool = True,
-        fp16_lm_cross_entropy: bool = False,
-        parallel_output: bool = True,
-        share_embeddings_and_output_weights: bool = False,
-        position_embedding_type: Literal['learned_absolute', 'rope'] = 'learned_absolute',
-        rotary_percent: float = 1.0,
-        seq_len_interpolation_factor: Optional[float] = None,
+        config: T5Config,
     ):
 
         super(T5Model, self).__init__(config=config)
 
-        self.config: TransformerConfig = config
-        self.transformer_encoder_layer_spec: ModuleSpec = transformer_encoder_layer_spec
-        self.transformer_decoder_layer_spec: ModuleSpec = transformer_decoder_layer_spec
-        self.vocab_size = vocab_size
-        self.max_sequence_length = max_sequence_length
-        self.pre_process = pre_process
-        self.post_process = post_process
+        self.config: T5Config = config
+        self.transformer_encoder_layer_spec: ModuleSpec = config.model_encoder_layer_spec
+        self.transformer_decoder_layer_spec: ModuleSpec = config.model_decoder_layer_spec
+        self.vocab_size = config.vocab_size
+        self.max_sequence_length = config.max_sequence_length
+        self.pre_process = config.pre_process
+        self.post_process = config.post_process
         self.add_encoder = True
         self.add_decoder = True
-        self.fp16_lm_cross_entropy = fp16_lm_cross_entropy
-        self.parallel_output = parallel_output
-        self.share_embeddings_and_output_weights = share_embeddings_and_output_weights
-        self.position_embedding_type = position_embedding_type
+        self.fp16_lm_cross_entropy = config.fp16_lm_cross_entropy
+        self.parallel_output = config.parallel_output
+        self.share_embeddings_and_output_weights = config.share_embeddings_and_output_weights
+        self.position_embedding_type = config.position_embedding_type
 
         # megatron core pipelining currently depends on model type
         self.model_type = ModelType.encoder_and_decoder
@@ -152,9 +140,9 @@ class T5Model(LanguageModule):
         if self.position_embedding_type == 'rope':
             self.rotary_pos_emb = RotaryEmbedding(
                 kv_channels=self.config.kv_channels,
-                rotary_percent=rotary_percent,
+                rotary_percent=config.rotary_percent,
                 rotary_interleaved=self.config.rotary_interleaved,
-                seq_len_interpolation_factor=seq_len_interpolation_factor,
+                seq_len_interpolation_factor=config.seq_len_interpolation_factor,
             )
 
         # Transformer encoder
@@ -177,10 +165,10 @@ class T5Model(LanguageModule):
         )
 
         # Output
-        if post_process:
+        if self.post_process:
             self.lm_head = T5LMHead(
                 config,
-                parallel_output,
+                self.parallel_output,
                 self.vocab_size,
                 self.pre_process,
                 self.share_embeddings_and_output_weights,

@@ -23,7 +23,7 @@ from megatron.core.transformer.moe.moe_utils import (
     switch_load_balancing_loss_func,
     z_loss_func,
 )
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.transformer_config import TransformerConfig
 
 
 class Router(ABC, MegatronModule):

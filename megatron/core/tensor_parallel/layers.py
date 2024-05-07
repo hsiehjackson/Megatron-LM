@@ -15,7 +15,7 @@ import torch.nn.init as init
 from torch.cuda.amp import custom_bwd, custom_fwd
 from torch.nn.parameter import Parameter
 
-from megatron.core.model_parallel_config import ModelParallelConfig
+from megatron.core.configs.model_parallel_config import ModelParallelConfig
 from megatron.core.parallel_state import (
     get_global_memory_buffer,
     get_tensor_model_parallel_group,

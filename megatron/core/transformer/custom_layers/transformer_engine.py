@@ -19,7 +19,7 @@ from megatron.core.parallel_state import (
 )
 from megatron.core.tensor_parallel import get_cuda_rng_tracker
 from megatron.core.transformer.enums import AttnMaskType
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.transformer_config import TransformerConfig
 from megatron.core.transformer.utils import make_sharded_tensors_for_checkpoint
 
 _te_version = packaging.version.Version(version("transformer-engine"))

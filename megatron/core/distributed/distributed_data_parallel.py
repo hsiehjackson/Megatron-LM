@@ -8,7 +8,7 @@ import torch
 
 from .. import parallel_state
 from ..transformer.module import MegatronModule
-from ..transformer.transformer_config import TransformerConfig
+from ..configs.transformer_config import TransformerConfig
 from .distributed_data_parallel_config import DistributedDataParallelConfig
 from .param_and_grad_buffer import ParamAndGradBuffer
 

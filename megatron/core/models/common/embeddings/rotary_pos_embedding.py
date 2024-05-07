@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from megatron.core.transformer.transformer_config import TransformerConfig
+    from megatron.core.configs.transformer_config import TransformerConfig
     from megatron.core.transformer.transformer_block import TransformerBlock
 
 import logging

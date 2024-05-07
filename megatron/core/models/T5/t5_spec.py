@@ -23,7 +23,7 @@ from megatron.core.transformer.transformer_block import (
     TransformerBlockSubmodules,
     get_num_layers_to_build,
 )
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.transformer_config import TransformerConfig
 from megatron.core.transformer.transformer_layer import TransformerLayer, TransformerLayerSubmodules
 
 

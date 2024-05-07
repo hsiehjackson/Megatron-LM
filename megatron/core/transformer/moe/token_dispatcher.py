@@ -8,7 +8,7 @@ import torch
 from megatron.core import parallel_state, tensor_parallel
 from megatron.core.tensor_parallel.mappings import _gather_along_first_dim_expert_parallel
 from megatron.core.transformer.moe.moe_utils import permute, unpermute
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.transformer_config import TransformerConfig
 
 
 class MoETokenDispatcher:

@@ -15,8 +15,8 @@ from megatron.core.packed_seq_params import PackedSeqParams
 from megatron.core.transformer.enums import AttnMaskType, ModelType
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.transformer_block import TransformerBlock
-from megatron.core.transformer.transformer_config import TransformerConfig
-from megatron.core.general_config import ModelGeneralConfig
+# from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_gpt import GPTConfig
 from megatron.core.utils import make_tp_sharded_tensor_for_checkpoint
 
 
@@ -41,19 +41,18 @@ class GPTModel(LanguageModule):
 
     def __init__(
         self,
-        general_config: ModelGeneralConfig,
-        config: TransformerConfig,
+        config: GPTConfig,
     ) -> None:
         super().__init__(config=config)
 
-        self.transformer_layer_spec: ModuleSpec = general_config.model_decoder_layer_spec #transformer_layer_spec
-        self.vocab_size = general_config.vocab_size
-        self.max_sequence_length = general_config.max_sequence_length
-        self.pre_process = general_config.pre_process
-        self.post_process = general_config.post_process
+        self.transformer_layer_spec: ModuleSpec = config.model_decoder_layer_spec #transformer_layer_spec
+        self.vocab_size = config.vocab_size
+        self.max_sequence_length = config.max_sequence_length
+        self.pre_process = config.pre_process
+        self.post_process = config.post_process
         # self.fp16_lm_cross_entropy = fp16_lm_cross_entropy
-        self.parallel_output = general_config.parallel_output
-        self.share_embeddings_and_output_weights = general_config.share_embeddings_and_output_weights
+        self.parallel_output = config.parallel_output
+        self.share_embeddings_and_output_weights = config.share_embeddings_and_output_weights
         self.position_embedding_type = config.position_embedding_type
 
         # megatron core pipelining currently depends on model type
@@ -61,7 +60,7 @@ class GPTModel(LanguageModule):
         self.model_type = ModelType.encoder_or_decoder
 
         # These 2 attributes are needed for TensorRT-LLM export.
-        self.max_position_embeddings = general_config.max_sequence_length
+        self.max_position_embeddings = config.max_sequence_length
         self.rotary_percent = config.rotary_percent
 
         if self.pre_process:

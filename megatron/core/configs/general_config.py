@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, ContextManager, Optional, Literal
-from megatron.core.transformer.spec_utils import ModuleSpec
-import torch
+
 
 @dataclass
 class ModelGeneralConfig:
@@ -15,15 +13,6 @@ class ModelGeneralConfig:
     vocab_size: int
 
     max_sequence_length: int
-
-    ###################
-    # Layer Spec
-    ###################
-    model_encoder_layer_spec: ModuleSpec = None
-    """layer spec of encoders. ignored for gpt models"""
-
-    model_decoder_layer_spec: ModuleSpec = None
-    """layer spec of decoders."""
 
     ###################
     # pre/post process

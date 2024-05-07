@@ -5,7 +5,6 @@ from typing import Callable, ContextManager, Optional
 
 import torch
 
-
 @dataclass
 class ModelParallelConfig:
     """Base configuration for Megatron Core

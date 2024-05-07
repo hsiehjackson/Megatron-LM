@@ -6,7 +6,7 @@ import torch
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
 from .. import parallel_state
-from ..transformer.transformer_config import TransformerConfig
+from ..configs.transformer_config import TransformerConfig
 from ..utils import get_attr_wrapped_model, get_model_config
 
 
