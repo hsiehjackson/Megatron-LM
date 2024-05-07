@@ -7,16 +7,10 @@ class ModelGeneralConfig:
     General configuration for each architecture, excluding model parallel config
     """
 
-    ###################
-    # vocab size & train seq
-    ###################
-    vocab_size: int
+    vocab_size: int = 32768
 
-    max_sequence_length: int
+    max_sequence_length: int = 4096
 
-    ###################
-    # pre/post process
-    ###################
     pre_process: bool = True
 
     post_process: bool = True

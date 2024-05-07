@@ -3,7 +3,7 @@ from torch import Tensor
 
 from megatron.core import tensor_parallel
 from megatron.core.transformer.module import MegatronModule
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_bert import BERTConfig
 from megatron.core.transformer.utils import get_linear_layer
 
 
@@ -24,7 +24,7 @@ class Pooler(MegatronModule):
         self,
         hidden_size: int,
         init_method: callable,
-        config: TransformerConfig,
+        config: BERTConfig,
         sequence_parallel: bool = False,
     ):
         super(Pooler, self).__init__(config)

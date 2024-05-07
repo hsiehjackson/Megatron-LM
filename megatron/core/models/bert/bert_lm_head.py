@@ -3,7 +3,7 @@ from torch import Tensor
 
 from megatron.core.fusions.fused_layer_norm import FusedLayerNorm
 from megatron.core.transformer.module import MegatronModule
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_bert import BERTConfig
 from megatron.core.transformer.utils import get_linear_layer
 
 
@@ -16,7 +16,7 @@ class BertLMHead(MegatronModule):
      """
 
     def __init__(
-        self, hidden_size: int, config: TransformerConfig,
+        self, hidden_size: int, config: BERTConfig,
     ):
         super().__init__(config=config)
 

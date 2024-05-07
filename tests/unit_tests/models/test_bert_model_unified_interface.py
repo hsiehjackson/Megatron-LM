@@ -5,7 +5,7 @@ import pytest
 import torch
 import os 
 
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_bert import BERTConfig
 from megatron.core.models.bert.bert_model import BertModel
 from tests.unit_tests.test_utilities import Utils
 from megatron.core.tensor_parallel.random import model_parallel_cuda_manual_seed
@@ -17,8 +17,16 @@ class TestBertModel:
         os.environ['NVTE_ALLOW_NONDETERMINISTIC_ALGO'] = '0' #Bert does not support flash attention
         Utils.initialize_model_parallel(1,1)
         model_parallel_cuda_manual_seed(123)
-        transformer_config = TransformerConfig(num_layers=2, hidden_size=12, num_attention_heads=4, use_cpu_initialization=True, perform_initialization=True)
-        self.bert_model = BertModel(config=transformer_config, num_tokentypes=0, transformer_layer_spec=bert_layer_with_transformer_engine_spec, vocab_size=100, max_sequence_length=4)
+        config = BERTConfig(num_layers=2, 
+                            hidden_size=12, 
+                            num_attention_heads=4, 
+                            use_cpu_initialization=True, 
+                            perform_initialization=True,
+                            num_tokentypes=0, 
+                            model_encoder_layer_spec=bert_layer_with_transformer_engine_spec, 
+                            vocab_size=100, 
+                            max_sequence_length=4)
+        self.bert_model = BertModel(config=config)
 
     def teardown_method(self, method):
         Utils.destroy_model_parallel()    
@@ -32,7 +40,7 @@ class TestBertModel:
         assert num_weights == 6702
 
     def test_set_input_tensor(self):
-        config: TransformerConfig = self.bert_model.config
+        config: BERTConfig = self.bert_model.config
         sequence_length = self.bert_model.max_sequence_length
         micro_batch_size = 2
 
@@ -46,7 +54,7 @@ class TestBertModel:
         assert self.bert_model.encoder.input_tensor.shape[2] == config.hidden_size
 
     def test_post_process_forward(self):
-        config: TransformerConfig = self.bert_model.config
+        config: BERTConfig = self.bert_model.config
         sequence_length = self.bert_model.max_sequence_length
         micro_batch_size = 2
 

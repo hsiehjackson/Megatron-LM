@@ -16,7 +16,7 @@ from megatron.core.models.common.language_module.language_module import Language
 from megatron.core.transformer.enums import AttnMaskType, ModelType
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.transformer_block import TransformerBlock
-from megatron.core.transformer.transformer_config import TransformerConfig
+from megatron.core.configs.model_configs.config_bert import BERTConfig
 from megatron.core.transformer.utils import get_linear_layer
 from megatron.core.utils import make_tp_sharded_tensor_for_checkpoint
 
@@ -42,25 +42,12 @@ class BertModel(LanguageModule):
 
     def __init__(
         self,
-        config: TransformerConfig,
-        num_tokentypes: int,
-        transformer_layer_spec: ModuleSpec,
-        vocab_size: int,
-        max_sequence_length: int,
-        pre_process: bool = True,
-        post_process: bool = True,
-        fp16_lm_cross_entropy: bool = False,
-        parallel_output: bool = True,
-        share_embeddings_and_output_weights: bool = False,
-        position_embedding_type: Literal['learned_absolute', 'rope'] = 'learned_absolute',
-        rotary_percent: float = 1.0,
-        seq_len_interpolation_factor: Optional[float] = None,
-        add_binary_head=True,
-        return_embeddings=False,
+        config: BERTConfig,
+        
     ):
         super(BertModel, self).__init__(config=config)
 
-        if return_embeddings:
+        if config.return_embeddings:
             assert self.post_process and self.add_binary_head
 
         assert (
@@ -68,18 +55,18 @@ class BertModel(LanguageModule):
             or os.getenv('NVTE_FLASH_ATTN') == '0'
         ), "Bert currently does not support flash attention. Please set env variable NVTE_FLASH_ATTN=0 or set NVTE_ALLOW_NONDETERMINISTIC_ALGO=0"
 
-        self.config: TransformerConfig = config
-        self.transformer_layer_spec: ModuleSpec = transformer_layer_spec
-        self.vocab_size = vocab_size
-        self.max_sequence_length = max_sequence_length
-        self.pre_process = pre_process
-        self.post_process = post_process
-        self.fp16_lm_cross_entropy = fp16_lm_cross_entropy
-        self.parallel_output = parallel_output
-        self.share_embeddings_and_output_weights = share_embeddings_and_output_weights
-        self.position_embedding_type = position_embedding_type
-        self.add_binary_head = add_binary_head
-        self.return_embeddings = return_embeddings
+        self.config: BERTConfig = config
+        self.transformer_layer_spec: ModuleSpec = config.model_encoder_layer_spec
+        self.vocab_size = config.vocab_size
+        self.max_sequence_length = config.max_sequence_length
+        self.pre_process = config.pre_process
+        self.post_process = config.post_process
+        self.fp16_lm_cross_entropy = config.fp16_lm_cross_entropy
+        self.parallel_output = config.parallel_output
+        self.share_embeddings_and_output_weights = config.share_embeddings_and_output_weights
+        self.position_embedding_type = config.position_embedding_type
+        self.add_binary_head = config.add_binary_head
+        self.return_embeddings = config.return_embeddings
 
         # megatron core pipelining currently depends on model type
         self.model_type = ModelType.encoder_or_decoder
@@ -90,16 +77,16 @@ class BertModel(LanguageModule):
                 config=self.config,
                 vocab_size=self.vocab_size,
                 max_sequence_length=self.max_sequence_length,
-                position_embedding_type=position_embedding_type,
-                num_tokentypes=num_tokentypes,
+                position_embedding_type=config.position_embedding_type,
+                num_tokentypes=config.num_tokentypes,
             )
 
         if self.position_embedding_type == 'rope':
             self.rotary_pos_emb = RotaryEmbedding(
                 kv_channels=self.config.kv_channels,
-                rotary_percent=rotary_percent,
+                rotary_percent=config.rotary_percent,
                 rotary_interleaved=self.config.rotary_interleaved,
-                seq_len_interpolation_factor=seq_len_interpolation_factor,
+                seq_len_interpolation_factor=config.seq_len_interpolation_factor,
             )
 
         # Transformer.
@@ -111,7 +98,7 @@ class BertModel(LanguageModule):
         )
 
         # Output
-        if post_process:
+        if self.post_process:
             # TODO: Make sure you are passing in the mpu_vocab_size properly
             self.lm_head = BertLMHead(config.hidden_size, config,)
 
@@ -123,7 +110,7 @@ class BertModel(LanguageModule):
                 bias=True,
                 skip_bias_add=False,
                 gather_output=not self.parallel_output,
-                skip_weight_param_allocation=pre_process and share_embeddings_and_output_weights,
+                skip_weight_param_allocation=self.pre_process and self.share_embeddings_and_output_weights,
             )
 
             self.binary_head = None
