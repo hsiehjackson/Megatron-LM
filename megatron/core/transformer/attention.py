@@ -301,6 +301,10 @@ class Attention(MegatronModule, ABC):
         # ==================================
         # core attention computation
         # ==================================
+        # if len(attention_mask.shape) == 4 and not isinstance(self.core_attention, DotProductAttention):
+        #     # from [b, 1, s, s] 0: valid / 1: invalid
+        #     # to [b, 1, 1, s] 0: invalid / 1: valid
+        #     attention_mask = torch.any(torch.eq(attention_mask, False), dim=3).unsqueeze(1)
 
         if self.checkpoint_core_attention and self.training:
             core_attn_out = self._checkpointed_attention_forward(

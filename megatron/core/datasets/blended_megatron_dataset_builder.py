@@ -85,14 +85,12 @@ class BlendedMegatronDatasetBuilder(object):
 
         # Return fake "mock" datasets
         if self.config.mock:
-
             return self._build_megatron_dataset_splits(None, None, self.sizes)
 
         # All splits come from the same distribution
         elif self.config.blend:
             blend = self.config.blend
             split = self.config.split_matrix
-
             # Blend consists of a single prefix
             if len(blend) == 1:
                 return self._build_megatron_dataset_splits(blend[0], split, self.sizes)

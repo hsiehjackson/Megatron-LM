@@ -182,7 +182,6 @@ class MaskedWordPieceDataset(MegatronDataset):
 
             # Add +1 for access to document upper bound
             indices = numpy.append(self.indices, self.indices[-1] + 1)
-
             sample_index = helpers.build_mapping(
                 self.dataset.document_indices[indices],
                 self.dataset.sequence_lengths,

@@ -13,6 +13,7 @@ from megatron.core.models.bert.pooler import Pooler
 from megatron.core.models.common.embeddings.language_model_embedding import LanguageModelEmbedding
 from megatron.core.models.common.embeddings.rotary_pos_embedding import RotaryEmbedding
 from megatron.core.models.common.language_module.language_module import LanguageModule
+from megatron.core.transformer.dot_product_attention import DotProductAttention
 from megatron.core.transformer.enums import AttnMaskType, ModelType
 from megatron.core.transformer.spec_utils import ModuleSpec
 from megatron.core.transformer.transformer_block import TransformerBlock
@@ -206,7 +207,10 @@ class BertModel(LanguageModule):
 
         It either returns the Loss values if labels are given  or the final hidden units
         """
-        extended_attention_mask = self.bert_extended_attention_mask(attention_mask)
+        if (self.transformer_layer_spec.submodules.self_attention.submodules.core_attention == DotProductAttention):
+            extended_attention_mask = self.bert_extended_attention_mask(attention_mask)
+        else:
+            extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(1)
 
         if parallel_state.is_pipeline_first_stage():
             input_ids = input_ids
