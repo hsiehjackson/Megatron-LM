@@ -11,6 +11,7 @@ from megatron.core.dist_checkpointing.mapping import ShardedStateDict
 from megatron.core.models.common.embeddings.language_model_embedding import LanguageModelEmbedding
 from megatron.core.models.common.embeddings.rotary_pos_embedding import RotaryEmbedding
 from megatron.core.models.common.language_module.language_module import LanguageModule
+from megatron.core.transformer.dot_product_attention import DotProductAttention
 from megatron.core.transformer.enums import AttnMaskType, ModelType
 from megatron.core.transformer.module import MegatronModule
 from megatron.core.transformer.spec_utils import ModuleSpec
@@ -214,14 +215,23 @@ class T5Model(LanguageModule):
         Returns:
             Tensor: loss tensor
         """
+        # [b, 1, s, s] 0: valid / 1: invalid
+        encoder_attn_mask = (encoder_attn_mask < 0.5).unsqueeze(1)
+        decoder_attn_mask = (decoder_attn_mask < 0.5).unsqueeze(1)
+        encoder_decoder_attn_mask = (encoder_decoder_attn_mask < 0.5).unsqueeze(1)
+        # [b, 1, 1, s] 0: valid / 1: invalid
+        if (self.transformer_encoder_layer_spec.submodules.self_attention.submodules.core_attention != DotProductAttention):
+            encoder_attn_mask = torch.all(torch.eq(encoder_attn_mask, True), dim=3).unsqueeze(1)
 
-        (
-            encoder_attn_mask,
-            decoder_attn_mask,
-            encoder_decoder_attn_mask,
-        ) = t5_extended_attention_mask(
-            [encoder_attn_mask, decoder_attn_mask, encoder_decoder_attn_mask]
-        )
+        if (self.transformer_decoder_layer_spec.submodules.self_attention.submodules.core_attention != DotProductAttention):
+            decoder_attn_mask = torch.all(torch.eq(decoder_attn_mask, True), dim=3).unsqueeze(1)
+        
+        if (self.transformer_decoder_layer_spec.submodules.cross_attention.submodules.core_attention != DotProductAttention):
+            encoder_decoder_attn_mask = (
+                torch.all(torch.eq(encoder_decoder_attn_mask, True), dim=3).unsqueeze(1),
+                torch.all(torch.eq(encoder_decoder_attn_mask, True), dim=2).unsqueeze(1),
+            )
+
         encoder_position_ids = t5_position_ids(encoder_input_ids)
         decoder_position_ids = t5_position_ids(decoder_input_ids)
 

@@ -208,9 +208,11 @@ class BertModel(LanguageModule):
         It either returns the Loss values if labels are given  or the final hidden units
         """
         if (self.transformer_layer_spec.submodules.self_attention.submodules.core_attention == DotProductAttention):
+            # [b, 1, s, s] 0: valid / 1: invalid
             extended_attention_mask = self.bert_extended_attention_mask(attention_mask)
         else:
-            extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(1)
+            # [b, 1, 1, s] 0: valid / 1: invalid
+            extended_attention_mask = (attention_mask < 0.5).unsqueeze(1).unsqueeze(1)
 
         if parallel_state.is_pipeline_first_stage():
             input_ids = input_ids
